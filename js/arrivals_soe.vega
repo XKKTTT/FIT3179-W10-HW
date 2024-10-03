@@ -1,0 +1,104 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": "State of Entry Arrivals (2010-2020)",
+  "width": 900,
+  "height": 500,
+  "params": [
+    {
+      "name": "Year_selection",
+      "value": 2020,
+      "bind": {
+        "input": "range",
+        "min": 2020,
+        "max": 2024,
+        "step": 1,
+        "name": "Year:  "
+      }
+    },
+    {
+      "name": "center_to",
+      "value": [105.9758, 4.2105],
+      "bind": {
+        "input": "select",
+        "options": [
+          [101.9758, 4.2105],  [100.9925, 5.4141], [114.6076, 4.6406],
+          [118.7473, 4.0399]
+        ],
+        "labels": ["Malaysia", "Penang", "Sarawak", "Sabah"],
+        "name": "Map Centre: "
+      }
+    }
+  ],
+  "projection": {
+    "type": "equirectangular",
+    "center": {"expr": "center_to"}  },
+  "layer": [
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/jnewbery/CartogramMalaysia/refs/heads/master/public/data/malaysia-states.topojson",
+        "format": {"type": "topojson", "feature": "states"}
+      },
+      "transform": [
+        {
+          "calculate": "'Data is not available for the state: ' + datum.properties.Name",
+          "as": "note"
+        }
+      ],
+      "mark": {
+        "type": "geoshape",
+        "fill": "#ddd",
+        "stroke": "white",
+        "strokeWidth": 1
+      },
+      "encoding": {"tooltip": {"field": "note"}}
+    },
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/XKKTTT/FIT3179-Data-Visualization-2-/main/data/soe_arrivals_by_year.csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {
+          "lookup": "soe",
+          "from": {
+            "data": {
+              "url": "https://raw.githubusercontent.com/jnewbery/CartogramMalaysia/refs/heads/master/public/data/malaysia-states.topojson",
+                "format": {
+                  "type": "topojson",
+                  "feature": "states"
+                }
+            },
+            "key": "properties.Name"
+          },
+          "as": "geo"
+        },
+        {"filter": "datum.year == Year_selection"}
+      ],
+      "mark": {"type": "geoshape", "stroke": "#000000", "strokeWidth": 0.5},
+      "encoding": {
+        "shape": {"field": "geo", "type": "geojson"},
+        "color": {
+          "field": "arrivals",
+          "type": "quantitative",
+          "scale": {
+            "type": "log", 
+            "domain": [1, 6000000], 
+            "scheme": "blues"
+          },
+          "legend": {"format": ".2s"}
+        },
+        "tooltip": [
+          {"field": "soe", "type": "nominal", "title": "State"},
+          {
+            "field": "arrivals",
+            "type": "quantitative",
+            "title": "Arrivals",
+            "format": ","
+          },
+          {"field": "year", "type": "quantitative", "title": "Year"}
+        ]
+      }
+    }
+  ],
+  "config": {}
+}
