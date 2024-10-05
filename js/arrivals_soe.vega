@@ -1,12 +1,12 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "title": "State of Entry Arrivals (2010-2020)",
+  "title": "Arrivals Per Kilometer Squared By State of Entry Since 2020",
   "width": 900,
   "height": 500,
   "params": [
     {
       "name": "Year_selection",
-      "value": 2020,
+      "value": 2023,
       "bind": {
         "input": "range",
         "min": 2020,
@@ -14,24 +14,11 @@
         "step": 1,
         "name": "Year:  "
       }
-    },
-    {
-      "name": "center_to",
-      "value": [105.9758, 4.2105],
-      "bind": {
-        "input": "select",
-        "options": [
-          [101.9758, 4.2105],  [100.9925, 5.4141], [114.6076, 4.6406],
-          [118.7473, 4.0399]
-        ],
-        "labels": ["Malaysia", "Penang", "Sarawak", "Sabah"],
-        "name": "Map Centre: "
-      }
     }
   ],
   "projection": {
-    "type": "equirectangular",
-    "center": {"expr": "center_to"}  },
+    "type": "equirectangular"  
+  },
   "layer": [
     {
       "data": {
@@ -63,42 +50,112 @@
           "from": {
             "data": {
               "url": "https://raw.githubusercontent.com/jnewbery/CartogramMalaysia/refs/heads/master/public/data/malaysia-states.topojson",
-                "format": {
-                  "type": "topojson",
-                  "feature": "states"
-                }
+              "format": {
+                "type": "topojson",
+                "feature": "states"
+              }
             },
             "key": "properties.Name"
           },
           "as": "geo"
         },
-        {"filter": "datum.year == Year_selection"}
+        {"filter": "datum.year == Year_selection"},
+        {
+          "calculate": "datum.arrivals / datum.size",
+          "as": "arrivals_per_km2"
+        }
       ],
       "mark": {"type": "geoshape", "stroke": "#000000", "strokeWidth": 0.5},
       "encoding": {
         "shape": {"field": "geo", "type": "geojson"},
         "color": {
-          "field": "arrivals",
+          "title": "Arrivals Per Km Squared (log)",
+          "field": "arrivals_per_km2",
           "type": "quantitative",
           "scale": {
             "type": "log", 
-            "domain": [1, 6000000], 
-            "scheme": "blues"
+            "domain": [1, 1000], 
+            "scheme": "greens"
           },
           "legend": {"format": ".2s"}
         },
         "tooltip": [
-          {"field": "soe", "type": "nominal", "title": "State"},
-          {
+        {
+            "field": "soe",
+            "type": "nominal",
+            "title": "State: "
+        },
+        {
+          "field": "arrivals_per_km2",
+          "type": "quantitative",
+          "title": "Arrivals Per Km2: ",
+          "format": ".2f"
+      },
+        {
             "field": "arrivals",
             "type": "quantitative",
-            "title": "Arrivals",
+            "title": "Total Number of Arrivals: ",
             "format": ","
-          },
-          {"field": "year", "type": "quantitative", "title": "Year"}
-        ]
+        },
+        {
+            "field": "year",
+            "type": "quantitative",
+            "title": "Year: "
+        }
+    ]
+      }
+    },
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/XKKTTT/FIT3179-Data-Visualization-2-/main/data/soe_arrivals_by_year.csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {"filter": "datum.year == Year_selection"},
+        {
+          "calculate": "datum.arrivals / datum.size",
+          "as": "arrivals_per_km2" },
+        {
+          "window": [
+            {"op": "max", "field":"arrivals_per_km2", "as": "max_arrivals_per_km2"}
+          ],
+          "frame": [null, null]
+        },
+        {
+          "filter": "datum.arrivals_per_km2 == datum.max_arrivals_per_km2"
+        },
+        {
+          "calculate": "'In ' + datum.year + ', '+ datum.soe + ' has the ; most visitors per km2 at ' + round(datum.max_arrivals_per_km2 * 100) / 100",
+          "as": "text_annotation_raw"
+        },
+        {
+          "calculate": "split(datum.text_annotation_raw, ';')",
+          "as": "text_annotation"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "bottom",
+        "dx": -8,
+        "dy": -8,
+        "fontSize": 12,
+        "fontWeight": "bold",
+        "color": "black"
+      },
+      "encoding": {
+        "text": {"field": "text_annotation"}
       }
     }
+    
+    
+
+    
+    
   ],
-  "config": {}
+  "config": {
+  }
 }
+
+
+
